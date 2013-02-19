@@ -2,23 +2,30 @@
 
 ###Overview
 
-function is a preprocessor in C for C which enables javascript-like anonymous functions. For example, if we have as our main.c
+function is a preprocessor in C for C which enables javascript-like anonymous functions. For example, if we have
 
-<pre>#include <stdio.h>
+```C
+/* main.c */
+
+#include &lt;stdio.h&gt;
 $#
 
 int main ()
 {
 	void (*fptr)() = $$ (printf, (const char *) "Hello, world!\n");
 	(*fptr) ();
-}</pre>
+}
+```
 
 then run
 
 <pre>$ ./function processed.c main.c
-$ gcc processed.c</pre>
+$ gcc -o processed processed.c
+$ ./processed
+Hello, world!
+$ </pre>
 
-then we will have a binary which prints hello world. Here "processed.c" is the output of function.
+and we're done.
 
 ###Usage
 
@@ -31,7 +38,10 @@ The special syntax function uses is the double dollar "$$" operator; this can't 
 
 Another example:
 
-<pre>#include <stdio.h>
+```C
+/* input.c */
+
+#include &lt;stdio.h&gt;
 #define SUCCESS 1
 $#
 
@@ -49,7 +59,8 @@ int main ()
 {
 	try_this ($$(printf, (const char *) "Success!\n"), $$(printf, (const char *) "Failure.\n"));
 	exit (0);
-}</pre>
+}
+```
 
 <pre>$ ./function output.c input.c
 $ gcc -o output output.c
@@ -59,7 +70,7 @@ $ </pre>
 
 ###Build instructions
 
-<pre>$ gcc -c -o vector.c vector.c
+<pre>$ gcc -c -o vector.o vector.c
 $ gcc -c -o function.o function.c
 $ gcc -o function function.o vector.o</pre>
 
