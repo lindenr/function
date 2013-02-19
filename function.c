@@ -144,14 +144,15 @@ Vector argify (Vector tokens)
 
 int main (int argc, char **argv)
 {
-	if (argc != 2)
+	if (argc != 3)
 		exit (1);
-	FILE *ifile = fopen (argv[1], "r");
-	FILE *ofile = stdout; //fopen ("output", "w");
-	FILE *hfile = fopen ("header", "w");
+	FILE *ifile = fopen (argv[2], "r");
+	FILE *tfile = tmpfile ();
+	FILE *cfile = tmpfile ();
+	FILE *ofile = fopen (argv[1], "w");
 	char c = ' ';
 	int FNUM = 0, i;
-	fprintf (hfile, "typedef void (*TYPFUNC) ();\n");
+	fprintf (cfile, "#include <string.h>\n#include <stdint.h>\n#include <stdlib.h>\ntypedef void (*TYPFUNC) ();\n");
 	while (!feof(ifile))
 	{
 		while (!feof(ifile))
@@ -159,14 +160,14 @@ int main (int argc, char **argv)
 			c = fgetc (ifile);
 			while ((!feof(ifile)) && c != '$')
 			{
-				fputc (c, ofile);
+				fputc (c, tfile);
 				c = fgetc (ifile);
 			}
 			if (feof (ifile))
 				break;
 			if (fgetc (ifile) == '$')
 				break;
-			fputc ('$', ofile);
+			fputc ('$', tfile);
 			fseek (ifile, -1, SEEK_CUR);
 		}
 		if (feof (ifile))
@@ -181,11 +182,11 @@ int main (int argc, char **argv)
 			fprintf (stderr, "function: extected '('\n");
 			exit (1);
 		}
-		fprintf (ofile, "FUNCTION%d (", ++FNUM);
+		fprintf (tfile, "FUNCTION%d (", ++FNUM);
 		Vector tokens = tokenise(ifile);
 		for (i = 2; i < tokens->len; ++ i)
 		{
-			output (ofile, v_at(tokens, i));
+			output (tfile, v_at(tokens, i));
 		}
 		Vector types = argify (tokens);
 /*		printf ("\nSTART\n");
@@ -194,31 +195,57 @@ int main (int argc, char **argv)
 			printf ("%s\n", v_at(types, i));
 		}
 		printf ("END\n");*/
-		fprintf (hfile, "void *FUNCTION%ddata;\nvoid FUNCTION1callback ()\n{\n\t", FNUM);
+		fprintf (cfile, "void *FUNCTION%ddata;\nvoid FUNCTION1callback ()\n{\n\t", FNUM);
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "%s var%d; ", v_at (types, i), i);
-		fprintf (hfile, "\n\tuintptr_t i = FUNCTION%ddata;\n", FNUM);
+			fprintf (cfile, "%s var%d; ", v_at (types, i), i);
+		fprintf (cfile, "\n\tuintptr_t i = (uintptr_t)FUNCTION%ddata;\n", FNUM);
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "\tmemcpy (&var%d, (void*)i, sizeof(var%d)); i += sizeof(var%d);\n", i, i, i);
-		fprintf (hfile, "\tfree (FUNCTION%ddata);\n\t", FNUM);
-		output (hfile, v_at (tokens, 0));
-		fprintf (hfile, "(");
+			fprintf (cfile, "\tmemcpy (&var%d, (void*)i, sizeof(var%d)); i += sizeof(var%d);\n", i, i, i);
+		fprintf (cfile, "\tfree (FUNCTION%ddata);\n\t", FNUM);
+		output (cfile, v_at (tokens, 0));
+		fprintf (cfile, "(");
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "%svar%d", (i>0)?", ":"", i);
-		fprintf (hfile, ");\n}\n");
-		fprintf (hfile, "TYPFUNC FUNCTION%d (", FNUM);
+			fprintf (cfile, "%svar%d", (i>0)?", ":"", i);
+		fprintf (cfile, ");\n}\n");
+		fprintf (cfile, "TYPFUNC FUNCTION%d (", FNUM);
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "%s%s var%d", (i>0)?", ":"", v_at (types, i), i);
-		fprintf (hfile, ")\n{\n");
-		fprintf (hfile, "\tFUNCTION%ddata = malloc (", FNUM);
+			fprintf (cfile, "%s%s var%d", (i>0)?", ":"", v_at (types, i), i);
+		fprintf (cfile, ")\n{\n");
+		fprintf (cfile, "\tFUNCTION%ddata = malloc (", FNUM);
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "%ssizeof (var%d)", (i>0)?" + ":"", i);
-		fprintf (hfile, ");\n");
-		fprintf (hfile, "\tuintptr_t i = FUNCTION%ddata;\n", FNUM);
+			fprintf (cfile, "%ssizeof (var%d)", (i>0)?" + ":"", i);
+		fprintf (cfile, ");\n");
+		fprintf (cfile, "\tuintptr_t i = (uintptr_t)FUNCTION%ddata;\n", FNUM);
 		for (i = 0; i < types->len; ++ i)
-			fprintf (hfile, "\tmemcpy ((void*)i, &var%d, sizeof(var%d)); i += sizeof(var%d);\n", i, i, i);
-		fprintf (hfile, "\treturn &FUNCTION%dcallback;\n}\n\n", FNUM);
+			fprintf (cfile, "\tmemcpy ((void*)i, &var%d, sizeof(var%d)); i += sizeof(var%d);\n", i, i, i);
+		fprintf (cfile, "\treturn &FUNCTION%dcallback;\n}\n\n", FNUM);
+	}
+	fseek (tfile, 0, SEEK_SET);
+	while (!feof(tfile))
+	{
+		c = fgetc (tfile);
+		while ((!feof(tfile)) && c != '$')
+		{
+			fputc (c, ofile);
+			c = fgetc (tfile);
+		}
+		if (feof (tfile))
+			exit (0);
+		if (fgetc (tfile) == '#')
+			break;
+	}
+	fseek (cfile, 0, SEEK_SET);
+	c = fgetc (cfile);
+	while (!feof(cfile))
+	{
+		fputc (c, ofile);
+		c = fgetc (cfile);
+	}
+	c = fgetc (tfile);
+	while (!feof(tfile))
+	{
+		fputc (c, ofile);
+		c = fgetc (tfile);
 	}
 	exit (0);
 }
-
