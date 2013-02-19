@@ -7,7 +7,7 @@ function is a preprocessor in C for C which enables javascript-like anonymous fu
 ```C
 /* main.c */
 
-#include &lt;stdio.h&gt;
+#include <stdio.h>
 $#
 
 int main ()
@@ -29,6 +29,8 @@ and we're done.
 
 ###Usage
 
+<pre>$ ./function output_file.c input_file.c</pre>
+
 <pre>$$ (func, ...)</pre>
 
 The special syntax function uses is the double dollar "$$" operator; this can't appear anywhere in your code (even in comments) apart from where you're using function. The $$ operator acts like a normal function -- its first argument is the function you want to use (call it func), and the rest are the arguments passed to func. The operator returns a function pointer (the function is of type void and has no arguments) which when called calls func with the arguments you passed it. There are a few restrictions:
@@ -41,7 +43,7 @@ Another example:
 ```C
 /* input.c */
 
-#include &lt;stdio.h&gt;
+#include <stdio.h>
 #define SUCCESS 1
 $#
 
