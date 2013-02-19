@@ -72,7 +72,5 @@ $ </pre>
 
 ###Build instructions
 
-<pre>$ gcc -c -o vector.o vector.c
-$ gcc -c -o function.o function.c
-$ gcc -o function function.o vector.o</pre>
+<pre>$ gcc -o function function.c vector.c</pre>
 
