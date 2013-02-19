@@ -195,7 +195,7 @@ int main (int argc, char **argv)
 			printf ("%s\n", v_at(types, i));
 		}
 		printf ("END\n");*/
-		fprintf (cfile, "void *FUNCTION%ddata;\nvoid FUNCTION1callback ()\n{\n\t", FNUM);
+		fprintf (cfile, "void *FUNCTION%ddata;\nvoid FUNCTION%dcallback ()\n{\n\t", FNUM, FNUM);
 		for (i = 0; i < types->len; ++ i)
 			fprintf (cfile, "%s var%d; ", v_at (types, i), i);
 		fprintf (cfile, "\n\tuintptr_t i = (uintptr_t)FUNCTION%ddata;\n", FNUM);
