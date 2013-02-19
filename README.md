@@ -51,5 +51,15 @@ int main ()
 	exit (0);
 }</pre>
 
-This will output "Success!\n" and exit.
+<pre>$ ./function output.c input.c
+$ gcc -o output output.c
+$ ./output
+Success!
+$ </pre>
+
+###Build instructions
+
+<pre>$ gcc -c -o vector.c vector.c
+$ gcc -c -o function.o function.c
+$ gcc -o function function.o vector.o</pre>
 
