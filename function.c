@@ -146,10 +146,10 @@ int main (int argc, char **argv)
 {
 	if (argc != 3)
 		exit (1);
-	FILE *ifile = fopen (argv[2], "r");
+	FILE *ifile = fopen (argv[2], "rb");
 	FILE *tfile = tmpfile ();
 	FILE *cfile = tmpfile ();
-	FILE *ofile = fopen (argv[1], "w");
+	FILE *ofile = fopen (argv[1], "wb");
 	char c = ' ';
 	int FNUM = 0, i;
 	fprintf (cfile, "#include <string.h>\n#include <stdint.h>\n#include <stdlib.h>\ntypedef void (*TYPFUNC) ();\n");
@@ -233,6 +233,8 @@ int main (int argc, char **argv)
 			exit (0);
 		if (fgetc (tfile) == '#')
 			break;
+		fputc ('$', tfile);
+		fseek (ifile, -1, SEEK_CUR);
 	}
 	fseek (cfile, 0, SEEK_SET);
 	c = fgetc (cfile);
