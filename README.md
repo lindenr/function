@@ -12,31 +12,54 @@ $#
 
 int main ()
 {
-	void (*fptr)() = $$ (printf, (const char *) "Hello, world!\n");
-	(*fptr) ();
+	$$ ($. (printf, (const char *) "Hello, world!\n"));
 }
 ```
 
-then run
+function is run as follows:
 
-<pre>$ ./function processed.c main.c
-$ gcc -o processed processed.c
+<pre>$ ./function processed.c main.c # processed.c is the output
+$ gcc -o processed processed.c # compile it
 $ ./processed
 Hello, world!
 $ </pre>
-
-and we're done.
 
 ###Usage
 
 <pre>$ ./function output_file.c input_file.c</pre>
 
-<pre>$$ (func, ...)</pre>
+<pre>global dumping ground: $#
+function pointer: $$
+function argument: $. (callback, ...)</pre>
 
-The special syntax function uses is the double dollar "$$" operator; this can't appear anywhere in your code (even in comments) apart from where you're using function. The $$ operator acts like a normal function -- its first argument is the function you want to use (call it func), and the rest are the arguments passed to func. The operator returns a function pointer (the function is of type void and has no arguments) which when called calls func with the arguments you passed it. There are a few restrictions:
+There are three special syntax things which function uses. The first, "$#", is the dumping ground for definitions which function uses. It must be placed after the definition of the callback function. The second, "$$", denotes the function pointer which cann be called. Lastly, "$." is the argument which must be passed to "$$". "$." is a function which takes as its first argument a callback and the rest of its arguments are parameters to be passed to the callback function. For example:
 
- * all arguments must be explicitly cast
- * the operator "$#" must be placed on a line by itself somewhere. This is where the calling of func happens and so all necessary definitions must be done by this point (so above if I put the "$#" line before the inclusion of stdio.h gcc would warn me about implicit declarations of printf, for example).
+```C
+void mycallback (int arg1, int arg2, char *arg3)
+{
+	printf ("Arguments: %d %d %s\n", arg1, arg2, arg3);
+}
+$#
+
+void myfunction ()
+{
+	void (*func) (void *) = $$;
+	void *arg = $. (mycallback, (int) 10, (int) -200, (char *) "Hello World!");
+	func (arg);
+}
+```
+
+is a valid snippet. Calling ```myfunction()``` will, predictably, echo "Arguments: 10 -200 Hello World\n".
+
+Some things to note:
+
+ * "$#" must appear before the other things in the file, and must appear only once;
+ * "$$" must appear in the file before "$.";
+ * "$$" and "$." must be paired; there must be the same number of "$$"s and "$."s in the file;
+ * all arguments to "$." *must be explicitly cast* as in the example, spacing doesn't matter but brackets do;
+ * "$$" and "$." may be used as many times as you like.
+
+Sorry for the numerous restrictions; the casting one is especially annoying but function has no way of determining the types of the arguments without explicit casts.
 
 Another example:
 
@@ -49,17 +72,17 @@ $#
 
 typedef void (*callback) ();
 
-void try_this (callback win, callback lose)
+void try_this (callback win, void *winarg, callback lose, void *losearg)
 {
 	if (SUCCESS)
-		(*win) ();
+		(*win) (winarg);
 	else
-		(*lose) ();
+		(*lose) (losearg);
 }
 
 int main ()
 {
-	try_this ($$(printf, (const char *) "Success!\n"), $$(printf, (const char *) "Failure.\n"));
+	try_this ($$, $. (printf, (const char *) "Success!\n"), $$, $. (printf, (const char *) "Failure.\n"));
 	exit (0);
 }
 ```
@@ -71,6 +94,8 @@ Success!
 $ </pre>
 
 ###Build instructions
+
+Very simple:
 
 <pre>$ gcc -o function function.c vector.c</pre>
 
