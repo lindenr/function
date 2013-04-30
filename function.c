@@ -281,6 +281,8 @@ int main (int argc, char **argv)
 		{
 			output (tofile, v_at(tokens, i));
 		}
+		if (tokens->len <= 2)
+			fprintf (tofile, ")");
 		Vector types = argify (tokens);
 		/*printf ("\nSTART\n");
 		for (i = 0; i < types->len; ++ i)
